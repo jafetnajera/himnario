@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Himnario"/>
+<link rel="manifest" href="manifest.json"/>
+<title>Himnario</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0a;
+  color: #f0f0f0;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #0f0f0f;
+  border-bottom: 0.5px solid #1e1e1e;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  width: 36px; height: 36px;
+  background: #1a1828;
+  border-radius: 8px;
+  border: 0.5px solid #3c3489;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.title-group { flex: 1; min-width: 0; }
+.title-group h1 { font-size: 18px; font-weight: 500; color: #f0f0f0; line-height: 1; }
+.badge {
+  display: inline-block; padding: 1px 8px;
+  background: #1e1e2e; border: 0.5px solid #534ab7;
+  border-radius: 20px; font-size: 11px; color: #afa9ec;
+  margin-left: 8px; font-weight: 400; vertical-align: middle;
+}
+
+.cast-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px;
+  background: #1a1828;
+  border: 0.5px solid #3c3489;
+  border-radius: 8px;
+  color: #afa9ec;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cast-btn:hover, .cast-btn:active { background: #231f40; border-color: #7f77dd; }
+.cast-btn svg { flex-shrink: 0; }
+
+/* MAIN LAYOUT */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  max-width: 100%;
+}
+
+/* LANDSCAPE: two-column layout */
+@media (orientation: landscape) and (min-width: 700px) {
+  .app { flex-direction: column; }
+  .main {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 16px 24px;
+  }
+  .search-col {
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 70px;
+  }
+  .results-col {
+    flex: 1;
+    min-width: 0;
+  }
+  .stats { margin-top: 0; }
+}
+
+.search-col { display: flex; flex-direction: column; gap: 8px; }
+.results-col { flex: 1; }
+
+.search-bar { position: relative; }
+.search-bar input {
+  width: 100%;
+  background: #111;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 13px 42px 13px 44px;
+  font-size: 15px;
+  color: #f0f0f0;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.search-bar input:focus { border-color: #534ab7; }
+.search-bar input::placeholder { color: #3a3a3a; }
+.search-icon {
+  position: absolute; left: 15px; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px; color: #444;
+  pointer-events: none;
+}
+.clear-btn {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; color: #555;
+  cursor: pointer; font-size: 20px; line-height: 1;
+  display: none; padding: 2px 6px;
+}
+.clear-btn:hover { color: #999; }
+
+.stats { font-size: 12px; color: #444; padding-left: 2px; }
+
+.results { display: flex; flex-direction: column; gap: 3px; }
+
+.result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 0.5px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none; color: inherit;
+}
+.result-item:hover { background: #15132a; border-color: #3c3489; }
+.result-item:active { background: #1e1a3a; }
+
+.slide-icon {
+  flex-shrink: 0; width: 34px; height: 34px;
+  background: #1a1828; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0.5px solid #2a2a3a;
+}
+.result-name {
+  flex: 1; font-size: 14px; color: #cccccc;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.result-name mark {
+  background: #3c3489; color: #cecbf6;
+  border-radius: 3px; padding: 0 2px;
+}
+.open-icon { width: 14px; height: 14px; color: #333; flex-shrink: 0; transition: color 0.15s; }
+.result-item:hover .open-icon, .result-item:active .open-icon { color: #7f77dd; }
+
+.empty-state { text-align: center; padding: 3rem 0; color: #444; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7f77dd" stroke-width="1.5">
+        <path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
+      </svg>
+    </div>
+    <div class="title-group">
+      <h1>Himnario <span class="badge" id="count-tag"></span></h1>
+    </div>
+    <a class="cast-btn" href="gonative://casting/start" id="cast-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 8.5A12.5 12.5 0 0113.5 20"/>
+        <path d="M2 4A16.5 16.5 0 0120 22"/>
+        <path d="M2 13a8 8 0 018 8"/>
+        <circle cx="2" cy="20" r="2" fill="currentColor"/>
+        <rect x="14" y="3" width="8" height="5" rx="1"/>
+        <path d="M14 10h8M18 13v4"/>
+      </svg>
+      Proyectar
+    </a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="search-col">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Buscar himno..."
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <button class="clear-btn" id="clear-btn">×</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="results-col">
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = [{"name": "0-Himno De Bienvenida .pptx", "id": "1b-vbdkdPm-Zmd8nIcT-qu9Ble-VL_6t6"}, {"name": "0-La Doxología; A Dios El Padre .pptx", "id": "1FX2GFMlAToO0W5cLvStz8u7TrUPYIBo2"}, {"name": "01-Iglesia De Cristo .pptx", "id": "18yyHmrdy5tQ_hTawEVO7txnCsv5ZWDTe"}, {"name": "02-Canta, Oh Buen Cristiano .pptx", "id": "1ZMvvhZEKhIO1t0JkN4A5Cxdvnb7j0qD6"}, {"name": "03-Invocacion A La Trinidad .pptx", "id": "1NnUct6FJrguisjcN_AgacjCTpUDB7jfF"}, {"name": "04-No Te Dé Temor Hablar Por Cristo .pptx", "id": "1Kpvg2zpCMNQG5eGaUUlk4BeGhfcXJo6Y"}, {"name": "05-Oh, Bondad Tan Infinita .pptx", "id": "1Ql9fXSxzuY94TRdWsq98zp9Dk9x-ZagN"}, {"name": "06-Bellas Palabras de Vida .pptx", "id": "1xKykcJHxUlgXRzs-NQh39pbs7qVeIVee"}, {"name": "07-De Heladas Cordilleras .pptx", "id": "102D-25ywjkP_qUN-PE2EVk1obQz36Tbm"}, {"name": "08-Gloria A La Trinidad .pptx", "id": "1R6JV9ibdKHIgbqNvhwsvWFj844kftVOU"}, {"name": "09-Lugar Para Cristo .pptx", "id": "1GZ8Tw1N2nim7QGUfYj2HyZ5g3AxXoTfW"}, {"name": "10-Cristo El Rey De Gloria .pptx", "id": "1u-JN8F9Fma3C_62nKhrZ_lLQ2ur3aHmH"}, {"name": "11-Hay Un Lugar Do Quiero Estar .pptx", "id": "1Vd4QWdJGyELgeMMIyjruAUXO5ddtwuQH"}, {"name": "12-Roca De La Eternidad .pptx", "id": "1x10LqbBG7IShL_Oqp7CALxg5t77L2AC9"}, {"name": "13-Dulce Oracion .pptx", "id": "1HfqXYkvQb2f8SMcZw2pAzLT1_JErycJ8"}, {"name": "14-Oh Que Amigo .pptx", "id": "1ngj3F_XXjMLQEoedMpMzh-OzaGVNeJRr"}, {"name": "15-Señor Nos Recordamos .pptx", "id": "1edVn6hOu0V7hLB5OvNRE9y-J0vuHI2dr"}, {"name": "16-Cerca de Ti, Señor .pptx", "id": "1tja4NsoxLAsHl4mV7bKIdHsCmxl4NLyz"}, {"name": "17-Mi Fe Espera En Ti .pptx", "id": "1xuwIDAmDDtW-6bi8k3jKJku1Iw7M-jnS"}, {"name": "18-Grato Es Decir La Historia .pptx", "id": "18F4J6l-0gJTnY9gQomleK2kYWjwfoLL1"}, {"name": "19-Oyes Como El Evangelio .pptx", "id": "1TUhvoX25UGnCp4hRY1962KNlk3OsbKIw"}, {"name": "20-!Oh Jovenes Venid! .pptx", "id": "1tO8NpN2Y2rIRgndj_1rK7ieOAPrW7KfI"}, {"name": "21-Jesús De Los Cielos .pptx", "id": "1zgVVqa63n5Tnv5yjc2k5Ui8Dwx02JPKT"}, {"name": "22-Fuente De La Vida Eterna .pptx", "id": "1asH9jM4Xv5oTNJX-OLUf_CQaRnH8XHzp"}, {"name": "23-Bauticese Cada Uno .pptx", "id": "1Prc-5WDyjvG9vUDuaz0lvO9oBupX5V7Y"}, {"name": "24-La Palabra Hoy Sembrada .pptx", "id": "1G6HAoG-JvA_nKkxhRAU_omjlpOrG6fEO"}, {"name": "25-Meditad .pptx", "id": "1zmL5cyQVGVN0_MzVQzZ8fOMvapaHRTP7"}, {"name": "26-Jesús Yo He Prometido .pptx", "id": "1LYRbUYpqYzxN0wjDNmx50L9LmTcgpvix"}, {"name": "27-Padre Tu Palabra Es .pptx", "id": "1izLRbvrkAmQXFo-U0esjLqkffYijX4ih"}, {"name": "28-Pronto La Noche Viene .pptx", "id": "1POmGGgmjUJQhGPq3sQGdj8VLuJw4bv8e"}, {"name": "29-Ya Venimos, Cual Hermanos.pptx", "id": "15vERqf_9hXA8EBcVXWIfkXlRVm8k5m5r"}, {"name": "30-La Santa Cena .pptx", "id": "1stlgOOD35xFJJQpmgQUMO7NUEW4T6aRv"}, {"name": "31-Cristo Me Ama .pptx", "id": "1NnopLg6dz_hoD5JMMOZqn7rgiTpfdILM"}, {"name": "32-Conmigo Sé .pptx", "id": "1cizUeLOW2yARZiFZbW10zrlqx5TAWV77"}, {"name": "33-Salvador, A Ti Me Rindo .pptx", "id": "1_G31ZHbPKVopdW7CdxpNULmCk-tM6-8v"}, {"name": "34-Andando En La Luz .pptx", "id": "1eu0jISvE4c3h4ZIvKN13YXNgNa7X7445"}, {"name": "35-Hay Un Mundo Feliz .pptx", "id": "1WqC-sH8fx5BmaRHzMgxSJVjsH6DQY2kZ"}, {"name": "36-Pecador, Ven Al Dulce Jesús .pptx", "id": "11Eui0PHx6H3Nj46TayVd-_w0ei2Z23-U"}, {"name": "37-Oh Amor Que No Me Dejaras .pptx", "id": "1yDpjhRREtRq4I7lmOd47cRejk4Laaqbq"}, {"name": "38-Que Mi Vida Entera Esté .pptx", "id": "1YyINR5by1VCYbJz3GI-Fmmxbbek45zbH"}, {"name": "39-Santa Biblia .pptx", "id": "1yooXToBaR-IRON6P3l11ulliEk2pi_GZ"}, {"name": "40-¡Noche De Paz! ¡Noche De Amor!.pptx", "id": "1dF_FOlkezWi9k8N3puWMpcye6Lzf5LdZ"}, {"name": "41-Un Amigo Hay Más Que Hermano .pptx", "id": "1xwVcJq3W1npO8293kwpQXHMLZ1-4IkQG"}, {"name": "42-Gloria Demos Al Padre .pptx", "id": "1_nyogBpBa8cOsN8FZAjG8RpUI3QFJQPL"}, {"name": "43-Estad Por Cristo Firmes .pptx", "id": "1xliRfk8-I_fZ6e62nLrni26Z1Vg1DeiY"}, {"name": "44-Tal Como Soy .pptx", "id": "19q8Z2HbCeEEkr89Y0xCjx2mYw0uI54B0"}, {"name": "45-Eres Limpio En La Sangre .pptx", "id": "1qdCXuAQ4ZC82Ch2MyZYBHg74V79O2Fj6"}, {"name": "46-Más Blanco Que La Nieve .pptx", "id": "1Qs_DVRyX5XvAN3ULTlE0OgmS-EdCF-aq"}, {"name": "47-Dondequiera Con Jesús .pptx", "id": "1jQ-MSN8G602hD_XTKy-cJhvEMpRz3bvh"}, {"name": "48-Jesús Es Mi Rey Soberano .pptx", "id": "1uaSCfKDEXgBj0KmjKSIeVpp5xqAO99LR"}, {"name": "49-En La Viña Del Señor .pptx", "id": "1838JWJ2071toYxMaRPv9w10z-5Dch62L"}, {"name": "50-Te Loamos ¡Oh Dios! .pptx", "id": "1uvqPFomgmwZvz5gIbd-q1dYEaO67EkV7"}, {"name": "51-La Cruz y La Gracia De Dios .pptx", "id": "1EuFtnwQjnNt7x3SLIWnSUQFKdhTCRYu5"}, {"name": "52-Salvador Mi Bien Eterno .pptx", "id": "1TV6ZGedLIQRYpSBFs0NNKts_AIHVj9no"}, {"name": "53-Loores Dad A Cristo Rey .pptx", "id": "1qCK77jIhdO7erZhSyolnBWzP2S80sPgQ"}, {"name": "54-Tuyo Soy Jesús .pptx", "id": "1zAGivaWkLxapp6GUUe96x0CGYjB56wNR"}, {"name": "55-El Mundo Perdido .pptx", "id": "15s9XalZRfIlt-cO3eK7IJWAAjud9o0Cc"}, {"name": "56-Me Guía El .pptx", "id": "1-_eZvh9WHsDoas4PgnbCKkrle48eC7II"}, {"name": "57-Cristo, Mi Piloto Sé .pptx", "id": "1fBDGPmC-2DFLRecvJ8ET8n2yEBoqkILP"}, {"name": "58-Luchad, Luchad Por Cristo .pptx", "id": "13Twy_3q1N4xR-oiz_pTESf0yjPD7HbI3"}, {"name": "59-Habladme Más De Cristo .pptx", "id": "1ogWrM-isFMFgMlUAy57PnjyIdKq6MgHq"}, {"name": "60-Cuando Leo En La Biblia .pptx", "id": "1f8_wZvtddsh0KhR_OAsTb-wI-v-oKSmy"}, {"name": "61-¡Gloria a Ti, Jesús Divino! .pptx", "id": "1R2Q_OcSpCQ0GXe4GynLweQocU_bNW7HF"}, {"name": "61a-¡Oh Háblame, Señor! .pptx", "id": "1hsq2tzpsxCsFwaDCJFTZ_IJ-lllCJvNk"}, {"name": "62-¡Oh Cristo! Tu Ayuda Yo Quiero Tener .pptx", "id": "1d8DhAtC6falglGQ6g_Gjiv4EVa_7FpBD"}, {"name": "63-Dime La Hantigua Historia .pptx", "id": "1VVth5pful9f8cGedKcvSZHmH_fbz-q2L"}, {"name": "64-Desde Los Himalayas .pptx", "id": "1121Lex4Klr4xSI3QZlxJ1tXdcOCE9d5h"}, {"name": "65-Más Cerca, ¡Oh! Dios, De Ti .pptx", "id": "1O8UCXFyhC4xwy3GRyAb3eb6wfjKk2RPo"}, {"name": "67- Canten Del Amor De Cristo .pptx", "id": "1xhlnwhkxonI1XoaCAgsaQAzhvRL5UnC2"}, {"name": "68-Yo Quiero Ser Cual Mi Jesús .pptx", "id": "1VnHodEQljuLdFK3MQRZD4v0W-ktrxULL"}, {"name": "69-Junto A La Cruz .pptx", "id": "1u6w2irKGKPRv4m7GHV15Zpze0hUmyRyQ"}, {"name": "70-Cuando Allá Se Pase Lista .pptx", "id": "1HfLmNHn62EAtMVsHurV2L5g2UCb6ZPb3"}, {"name": "71-Santo Santo Santo .pptx", "id": "10ARqfsTpAUDUHd1dZ4d5mpycDlstgbPt"}, {"name": "72-Día Feliz .pptx", "id": "1xAe9qykICJiA423GxJzS_0mux9wn_ZKP"}, {"name": "73-A Jesucristo Ven Sin Tardar .pptx", "id": "1nSiXWq3tSesGJo4oW5z_GPhI9grTlLvT"}, {"name": "74-El Nombre De Jesús .pptx", "id": "1S4WEcGjkwhhf-LK3bmDVr7GugcnKsCKJ"}, {"name": "75-Cantaré La Maravilla .pptx", "id": "11LISVDKmVQlxgpa--H7ACdJuJZQ-8UB1"}, {"name": "76-Cara a Cara .pptx", "id": "1uyHCTed-jN7o3eYDvAjPlLZ-pc94IOJ4"}, {"name": "77-Dulce Consuelo .pptx", "id": "10RDkyqf28H8EnSc-JusRMeC0dj7Lt7xB"}, {"name": "78-A Ti y A Mí .pptx", "id": "1v7_w3PtlnZMWttNnNuyV0-ZcNM69oDst"}, {"name": "79-Ya Salvo Soy .pptx", "id": "1Z-OaQXFhqg1Q1LHSoF4SC1toem64Xh7Q"}, {"name": "80-El Amor De Jesucristo .pptx", "id": "1xbfkBhvDkSoOSDN8Ofda5GNIIvAcMRU5"}, {"name": "81-Más Santidad Dáme .pptx", "id": "1VRuKC7CKbnorLxknSAobtd6oo75V0YFf"}, {"name": "82-¡Oh, Excelsa Gracia De Amor! .pptx", "id": "1Jffu1uBmn6v2boa43cqRPGS9grwAyHvx"}, {"name": "83-Oh, Ven Sin Tardar .pptx", "id": "1mT_nmFMgCoKiIKPMNL-MTYmFa5azyEdD"}, {"name": "84-Soy Yo Soldado De Jesús .pptx", "id": "1_zq_CSs1cGehF8obAXXhE6Hp8KYJpvJm"}, {"name": "85-Dulce Comunion .pptx", "id": "1NQKzbIVY-Ur2A5OKwkdqynkexc2pKscu"}, {"name": "86-¡Trabajad!¡Trabajad! .pptx", "id": "1RvBdry6H0NvjII3FOO6R9w0C3eds29Y1"}, {"name": "87-Cantad Alegres Al Señor .pptx", "id": "1PWcVk6KNxhFAKDTBuhvGsevTTxth3wTL"}, {"name": "88-Escuchad, Jesús Nos Dice .pptx", "id": "1Hgc_9ORMN7ZPfAHcPtmZPIgm7wxHyzoM"}, {"name": "89-Grande Gozo Hay En Mi Alma .pptx", "id": "1UVqz-j9c_ijz25sWTnn4UCIuz_jJp9OI"}, {"name": "90-Cuando Andemos Con Dios .pptx", "id": "1wvzc8bWQxxeCcnV9-36ElGVZ6z4Dn3oD"}, {"name": "91-Dilo A Cristo .pptx", "id": "1YdpHMAS-ziJJqN5xXa1dhQrgkxDtJmr_"}, {"name": "92-Paz Paz Cuan Dulce Paz! .pptx", "id": "1-8FE-KLO2e89EUEnZUATAP8Y2EA-iTQ7"}, {"name": "93-Más De Jesús .pptx", "id": "1-qSp7lMOZ7CGmomoCQjr64XZBMmfuALH"}, {"name": "94-La Luz De Dios .pptx", "id": "1WsRtT1QjX4cWzHjSLa__Br-RDcXZlNiV"}, {"name": "95-Mi Amor y Vida .pptx", "id": "1fLzlVXYrL-GNSz3JpmaR9hZLYpXMeT-o"}, {"name": "96-Ven A Cristo .pptx", "id": "1SacvcM9szIpKZWYxZ9fEAOnm8KVo7zUY"}, {"name": "97-Las Pisadas Del Maestro .pptx", "id": "1_wctlJyBvq2Rb0Tp8xEq3w1fZdfHVVyL"}, {"name": "98-Puedo Oir Tu Voz Llamando .pptx", "id": "1JBuR5PeAbPQt4cg0tseGZrU1EozplBo6"}, {"name": "99-De Mi Tierno Salvador .pptx", "id": "1AiV-xYWnk6yJTfrcu9ur7i3yFBH5nyvF"}, {"name": "100-Busca Por Mí .pptx", "id": "1Q3zzobQ6QDSSaCVDQ1XOIbtMuSX7-t4N"}, {"name": "101-Jesús Es Mi Amigo .pptx", "id": "1w93hbtCWVFHYfuf_QwclxzwvPcwJAw9W"}, {"name": "102-Grandes Cosas Cristo Ha Hecho Para Mi .pptx", "id": "1emgQ3BmCrx4qsCx4SG6ctguShkri8alb"}, {"name": "103-Voy Al Cielo Soy Peregrino .pptx", "id": "1WvcsjYean2TrGMW3RHAsJrpwcof0Pecn"}, {"name": "104-Sembraré La Simiente .pptx", "id": "1wtUb_-vdjBRF0JmU7pzXCR-9agAaMGWJ"}, {"name": "105-Oh, Cristo Mio .pptx", "id": "1QNoiH9uW2Br1QBeOhSia5CaOqy89X6QX"}, {"name": "106-Cristo Es Mi Dulce Salvador .pptx", "id": "16r0qRdNIOXfK6fMM6YOfGEKvgI1wO-nz"}, {"name": "107-Nítido Rayo Por Cristo .pptx", "id": "1WYX-M0vc_At1W1s9P4edE6cqJvUYVcjV"}, {"name": "108-Da Los Mejor Al Maestro .pptx", "id": "10jhFfCUnqDhjM-UilhwJFX-rsKbF_Zg0"}, {"name": "109-Allá Comprendé .pptx", "id": "1q82wWtJ9TMGV8xTnBUHopRaO2OAKvBsH"}, {"name": "110-Loor A Ti Señor .pptx", "id": "1RLYLhMV_E--H5LQH2rjs7EN5z7FfVckZ"}, {"name": "111-Cariñoso Salvador .pptx", "id": "1lLG_exDscRCyiyKPxBHqIq0WbFOIC16L"}, {"name": "112-Jehová Está En Su Santo Templo .pptx", "id": "168MhSWVeusqt0b4joAiX8ecNvNIhfTiN"}, {"name": "113-A Los Pies De Jesucristo .pptx", "id": "1GtnKm5YuH40tbjSF2nVl1eI26KzPb9mL"}, {"name": "114-El Gran Día Viene .pptx", "id": "1WVE__DBO1T7SVKYvl1ltZ2dLb9Rau-1y"}, {"name": "115-Firmes Y Adelante .pptx", "id": "1g4o2_IalQBSU9OlInOT5DWRFIbh3BK4-"}, {"name": "116-Las Promesas De Jesús .pptx", "id": "1gJTMHPuv1cpRqzZUNlrYtKzuc-IEipSM"}, {"name": "117-En Busca De Obreros .pptx", "id": "1eHJQ6SeZr5zysT3EGw4zwspCjZ35eRlq"}, {"name": "118-Valor y Fe .pptx", "id": "1tDm38dEVnRsg-GrjcbCMHjFEOk62abdH"}, {"name": "119-Escucha, Pobre Pecador .pptx", "id": "1P71Qcv23SPtdVyz17Fm7pOrhF-e-KmUl"}, {"name": "120-Dios Es Amor .pptx", "id": "1ms8mGuNZZMUcE-r7kfyQPRvDwKcBpLlh"}, {"name": "121-Cristo, Guárdanos Ahora .pptx", "id": "14IsiC7L-abDARH5SAwcWseyI307zfw0_"}, {"name": "122-Dios Os Guarde .pptx", "id": "1-eui5AIsa_Fi657g-2yakxJETF_KFcOm"}, {"name": "123-En La Cruz .pptx", "id": "1OBCaH_kNWMUgV--CFE1IfwGupzvF4_xt"}, {"name": "124-Nada Hay Que Me Pueda Apartar .pptx", "id": "16WjzHrJu89oDFIgEFzILlNyB73g7rgoS"}, {"name": "125-¡Te Quiero, Mi Señor! .pptx", "id": "13y0aHp1L2580ZI8xZdFjd8oKq6lFIgmQ"}, {"name": "126-Sólo La Sangre .pptx", "id": "1RN8_WdEpmg-cX9QhwFGISv1r_rmvsBbx"}, {"name": "127-Jesucristo Desde El Cielo .pptx", "id": "1FbdovvZIy4vfCjFZqZGsOmIWPgieYo2w"}, {"name": "128-El Mundo No Es Mi Hogar .pptx", "id": "12IHgNxp08QNP68Ejqx7dnthZE_XBAp0D"}, {"name": "129-Ven Pecador .pptx", "id": "1M1u1QHO8xME7NW10mIYPuLEhLwC45Ela"}, {"name": "130-No Lo Hay .pptx", "id": "1QvZ4843TS89Xu8-YasfxSG4_FbA7JEFf"}, {"name": "131- Venid, Pastorcillos .pptx", "id": "1zRQh-3c0ULArVF6A96u5DYy--dAwU-nW"}, {"name": "132-Tiernas Canciones Alzad Al Señor .pptx", "id": "1pTIZgfBfqQR8bs0eQ1hGWaUsHv9TwQjr"}, {"name": "133-Con Voz Benigna .pptx", "id": "1qFl5nsQz6MuV4HxBJIvZQoASiKECDyT4"}, {"name": "134-A Tu Palabra Mi Señor .pptx", "id": "1OWs35d2neUiIBeQHt7v2BbnP-n1XaaKg"}, {"name": "135-La Merced De Nuestro Padre .pptx", "id": "1schpTyLVRdb_KXEnvYH-Nbzt39iWM10d"}, {"name": "136-Do Tu Me Necesites .pptx", "id": "1lmH2hidxOtT_HUqgcQ_4lq2k2R22DAED"}, {"name": "137-Guíame, Luz Divina .pptx", "id": "1AArlHeHnUD3IhSFpB4oL8HS-3D0rX8vS"}, {"name": "138-El Me Levantó .pptx", "id": "1JFdtBjSuSToe45B2CtjhTk7qxld5ycM0"}, {"name": "139-Acogida Da Jesús .pptx", "id": "1M_V7gfkTbiahUx2ogQiz3lfcLJsOFJ3B"}, {"name": "140-Todos Los Que Tengan Sed .pptx", "id": "1oEVZKKF2D3OEn3w-UwBYvcC-OE0gv1-h"}, {"name": "141-¡Oh, Cuán Dulce! .pptx", "id": "1NRzppEy5s2Z_QaJEFNaMPRo8kYMW38Oh"}, {"name": "142-Oigo La Voz Del Buen Pastor .pptx", "id": "1eGXraNY8yYDvvEMudnmMwJJvQ_d51KCF"}, {"name": "143-Mora Conmigo .pptx", "id": "1X0BCeA7fxBt3gEjbm92OxCE0URjNZglx"}, {"name": "144-Cerca, Más Cerca .pptx", "id": "11U72a4FC-6e391wNocS0OCFZnIJQajgT"}, {"name": "145-Guiame, Oh Salvador .pptx", "id": "1E37UYJRLiwtTnOswORBG2f4iMJ77PK0s"}, {"name": "146-Cristo, Tu Santo Amor .pptx", "id": "1GtyLMPDQ4BKLQsoBRqy3W5ZCelXBpRPH"}, {"name": "147-Maestro, Ruge La tempestad .pptx", "id": "1txefuGc-1OOdb9-I2jGOJ1SqNtracJjI"}, {"name": "148-Dejo El Mundo Y Sigo A Cristo .pptx", "id": "1S1gJ1QQWV3OlFvr8LZ005p6oiVxSJDMk"}, {"name": "149-Dáme La Fe De Mi Jesús .pptx", "id": "16IlqpjnJRBFb4vOZKuNNrE_YijuC2eaF"}, {"name": "150-Nuestro Sol Se Pone Ya .pptx", "id": "13Hnx4l9tRYFTt-miXcKwtKQykTQxu6eh"}, {"name": "151 - Yo Escucho Buen Jesús .pptx", "id": "1Bkn-wFYY35jjLL9EkUD5wC56yvkNmW6w"}, {"name": "152-El Canto De Gloria .pptx", "id": "1HhLxnyRGga8AxUn40yP1-1psmHeSnOoa"}, {"name": "153-No Me Pases, No Me Olvides .pptx", "id": "1HMT8C1BD_0viZxJUu2LBzkCzHm0GyVzZ"}, {"name": "154- La Tumba Le Encerró (Matices).pptx", "id": "1f7xSKx0yzFMJgbNaTBM883ezBA4J5_Rb"}, {"name": "154-La Tumba Le Encerró .pptx", "id": "1jqz7DWVRmeG4CJO5b2sO4PfvYKqfazti"}, {"name": "155-Dime La Historia De Cristo .pptx", "id": "1KQPn0WMqFcUUtKmJluafQR6fCAzEdrF8"}, {"name": "156-La Tierna Voz del Salvador .pptx", "id": "1h7PwZ98VsdfyhpeRtAuedGuDFJyDY24K"}, {"name": "157-¿Con Qué Limpiará El Joven Sus Caminos .pptx", "id": "16I07r9fyrsuZw7j7avrOU0GKVgoTN8Lt"}, {"name": "158-¡Estoy Presto! .pptx", "id": "1HlU7EyOG_7JzTz16GK3rfHuqnAInAKFj"}, {"name": "159-El Ultimo Paso de la Vida .pptx", "id": "1Rx36-YuRhMZVZJdxN4AvK-Kt6-hStR9j"}, {"name": "160-Cristo El Salvador .pptx", "id": "1575C-bMo4Zm0N_b8aSflN7xLpduN6NUr"}, {"name": "161-Oíd Un Son En Alta Esfera .pptx", "id": "1s0Xpf9K66q_RDOnLCmHidxEwlGPyNPVb"}, {"name": "162-Sagrado Es El Amor .pptx", "id": "1psPUu5XFkgGgBYvMo3vFlArBRWOfuF5e"}, {"name": "163-Castillo Fuerte Es Nuestro Dios .pptx", "id": "1H3OBC9t3DYHdUR3XK4FFB2-nrwsfjAcc"}, {"name": "164-¿Vives Tú Sólo Por Cristo Jesús .pptx", "id": "1RUr40yC6LmLFDqkW8p5fbRcZWCliFoGl"}, {"name": "165-Dicha Grande .pptx", "id": "1zwhbn25gmoqYfAGEnJSHImCRcPJhDmiT"}, {"name": "166-El Mejor Amigo .pptx", "id": "1JoRkxTEhlD4M3iCQL9hwgyNALewGmjDf"}, {"name": "167-Los Que Aman al Señor .pptx", "id": "19aZaHgJJ6NqrtgDQ6pVNW1sz6jVGqgEi"}, {"name": "168-Cristo, Tu Voluntad .pptx", "id": "1dsnJHIGrrkmb1di-3LFMUUnIQsIRqb0K"}, {"name": "169-Cantad, ¡Oh, Peregrinos! .pptx", "id": "1SupgvCu7VY2wDq3MwAzUO4bi2oJjCbsY"}, {"name": "170-!Oh, Cuánto Amo A Cristo! .pptx", "id": "1ZM-VcoixJb41WZmIBS8M9KqMBwWRafMb"}, {"name": "171-Da La Luz! .pptx", "id": "1cKuKHlmSs_uHa2LAvghwWBzG-FOuR4Dq"}, {"name": "172-¡Cuán Grato y Dulce! .pptx", "id": "1-oM3eVHRcCeo0LEyQJMlNUGSfdl0_0Qf"}, {"name": "173-Paz, Plena Paz .pptx", "id": "1chR_GnuYpd9phApPLiv4YxJGo1OXGOG6"}, {"name": "174-El Hijo Pródigo .pptx", "id": "1FBSltlXmAkfMyjXgWBROpXFbM4rE3xhp"}, {"name": "175-Haz Lo Que Quieras .pptx", "id": "1_MEaGllwr2YTDTBXeZI0E0k1X0pUj_A5"}, {"name": "176-Salvo En Los Tiernos Brazos .pptx", "id": "1brwMQ8vAMHMCUoou3Dg3394p_8SvUs65"}, {"name": "177-Aunque Soy Pequeñuelo .pptx", "id": "10r-IHREPSZbCZ8Gf6GG4MaamvuXAZSpV"}, {"name": "178-Lejos De Mi Padre Dios .pptx", "id": "190x4vdcXPwv4glYMIHBw7wi1t92BkQIG"}, {"name": "179-Dios Bendiga Las Almas Unidas .pptx", "id": "1LThG9lB18tquD7NhX227tauNnagigzwe"}, {"name": "180-Lindas Las Manitas Son .pptx", "id": "1bwXAH_PFiUZlW5QNCs4vOIDHdPDqjNF3"}, {"name": "181-Cristo Ama A Los Niñitos .pptx", "id": "1ZESd-QF7OraDs-nRyRZNXyok9CVA5Ou7"}, {"name": "182-Señor, Mi Dios .pptx", "id": "1OJgV24ejA1bHjJ5qdnGCsFYQyacOxUtA"}, {"name": "183-Por Qué Al Mundo Vino .pptx", "id": "1IULttVURvFnhGNXKDeC6L_fnxc3Bv8ll"}, {"name": "183-Por Qué Al Mundo Vino V2.pptx", "id": "1AxqJ4wO4A8Dp1Cf7hyu64Pc5HS_dMOIQ"}, {"name": "184-Hubo Quien Por Mis Culpas .pptx", "id": "1mP9sOfCnnztSrrWoJOh_VFXupuKSoBh_"}, {"name": "184-Hubo Quien Por Mis Culpas (D Major).pptx", "id": "1kdGYUrWC3a6Gdv_t6_39cWPRxLdOLCjI"}, {"name": "185-El Cuidará De Mí .pptx", "id": "12urQMo8CZyjPG14uYQdq54v6D5cH4q-Y"}, {"name": "186-Amoroso Salvador .pptx", "id": "1cmETtgIn9kHu8oIK4Oo_KkrGf0d1jiVa"}, {"name": "187-A Cristo Coronad .pptx", "id": "1D2SgTFWrLA4MXIk6GtKwOqkKvbbqMqdW"}, {"name": "188-La Gloriosa Aparicón .pptx", "id": "1_EGANxO8BM527yLhyoX65m8H99DHjNk5"}, {"name": "189-Hay Poder En Jesús (Practicar).pptx", "id": "1VJRhsuADjLMCDXFkC7ysgK2aYdhLO0yM"}, {"name": "190-Es Jesucristo La Vida, La Luz .pptx", "id": "1xrqQzwucTFQH-FaXV_xuphS6nqbT1w35"}, {"name": "191-La Palabra Del Señor .pptx", "id": "1FyODILFyxbHeOYDg_KK3maAy_HjIG-9u"}, {"name": "192-Huye Cual Ave A Tu Monte .pptx", "id": "1SC3uC878xRbVGVcfgRMg-NynnVuEjmfj"}, {"name": "193-Un Día .pptx", "id": "1uPOo3Tt1Ipm2YKulnCBcTbX0SXIVokN8"}, {"name": "194-Comprado Con Sangre Por Cristo .pptx", "id": "1FuWy5Q-ma_dPROyC17In52mqLBy0Ovd5"}, {"name": "195-¡Oh Qué Salvador! .pptx", "id": "14-mVyaRUMPjxLycLrM_4Cq_Y2wmgBug8"}, {"name": "196-La Hermosura De Cristo .pptx", "id": "1hZh4sehStXWRQYa9bQOxMNhH3JBd5zR8"}, {"name": "197-En La Mansión Do Cristo Está .pptx", "id": "1QOJdDxge56EvkPTtty6kMoNkjGMqy0lP"}, {"name": "198-Todo Aquel Que Oye .pptx", "id": "1D26ggkdJNRDPDozkdVyiDCGyggzC-ZUj"}, {"name": "199-Años mi Alma En Vanidad Vivió .pptx", "id": "1SJrwYfnG6Gwtez90lAUIBPAtM4y-FjXe"}, {"name": "200-No Hay Dios Tan Grande Como Tú .pptx", "id": "1pfYkYyDwSR3_lJ_u5Y_kNBRG0Dfz9GT8"}, {"name": "201-Allí La Puerta Franca Está .pptx", "id": "1z9m3xvkAUP63TSIYC4nxJDq_CyZDeFUL"}, {"name": "202-Despliedue El Cristiano .pptx", "id": "1G1GQLlhdwsANFaCO_pxx8zGbMa2gKHTc"}, {"name": "203-Buscando A Jesús .pptx", "id": "1irEjGnKOmc2PzVrHPOLUNevzQ9wyr9pW"}, {"name": "204-Si Creyere Puede A El Venir .pptx", "id": "1-k4O9IIW0fTjMY7WdZza7AqqDqEFfgPZ"}, {"name": "205-Lluvias De Gracia .pptx", "id": "1ZONt4llr2B8TpW_M8SN8lNuYfqHACrPu"}, {"name": "206-La Cruz Me Guiará .pptx", "id": "1hxX6wWVHk7XS7QtbzkfJtEsgdxP8zKrZ"}, {"name": "207-¿Te Sientes Casi .pptx", "id": "1UGc6Ie7b6kaQuks5nMlYXQyidmEMM5BB"}, {"name": "208-La Bandera De La Cruz .pptx", "id": "11-A2MW8zEf4qaz0X8-ZWVtnTqvWmT1hG"}, {"name": "210-Señor Del Cielo .pptx", "id": "1pINV_hgf4O0RrXDCIZebOXGq7Eq0OqrJ"}, {"name": "212-Ya Todo Dejé .pptx", "id": "17q88zm1FFh8z7ppD7fZiVwZrnhLRWGa9"}, {"name": "213-Oh Yo Quiero Andar Con Cristo .pptx", "id": "10q38zS3jXAqx2koCgAC3mV6XzusrDyiA"}, {"name": "214-Gloria Al Cordero .pptx", "id": "10DlexClbHpxtoIP6Kq74_Eh08MBIUTK4"}, {"name": "215-Dulce Paz .pptx", "id": "1vbAjG5DDg6JKytVgVXcHAjn2I875mfee"}, {"name": "216-De Jesús EL Nombre Guarda .pptx", "id": "1TKdoleOsnfWEAUqJsc62ulgr9bb9ua0S"}, {"name": "217-Caundo En Ocaso .pptx", "id": "1IRWmIySF3yOWm1MxQAXJLEztswlroVnB"}, {"name": "218-Dios Cuidara De Ti .pptx", "id": "1dcHlZ29OeWchUwg3ogaxRcuBI1Ousv5F"}, {"name": "219-La Cruz de Jesús .pptx", "id": "135uVX477cu_1uf0G4DJ5RQJIb_wGRFi6"}, {"name": "220-Cristo Me Ayuda Por El A Vivir .pptx", "id": "1gcTzkj0lkNiybJIzMg0aoD4wYJIuIvI9"}, {"name": "221-Alguna Vez Ya No Estaré .pptx", "id": "13uk2FLJ-ackSaLWzwsD_EZhGpZhfhb44"}, {"name": "222-Jehová Es Mi Pastor .pptx", "id": "1PL3wCEMBUzzxIVXbPNbLGdQRkh-WARvW"}, {"name": "223-Con Mi Pastor .pptx", "id": "10OAb99lTnJ-JUKaSqHWQ9yiaUrvSc-Sb"}, {"name": "224-Acampados En Montes De Luz .pptx", "id": "1qabyBjSvfnRdprTGQ_04JhVZOFa4y-p9"}, {"name": "225- Yo Sé Que Existe Un Redentor .pptx", "id": "1SGL8PjVPM4LlTPhc4wHmdua-WARAqZFW"}, {"name": "226-Mensajeros Del Maestro .pptx", "id": "1rhzOUD-cWSo8C3STrRZU1Quy3FyfsVf0"}, {"name": "227-Buscando Al Perdido .pptx", "id": "149FehgRlEVQCW0uC01y647BAq4OWks6c"}, {"name": "228-Oh Padre de la Humanidad .pptx", "id": "1SrOwcY17Du6AfFGQJ7vFns4g2NFr6cbV"}, {"name": "229-Nunca Me Hablaste De El .pptx", "id": "10rCKHIMvJ_OXKpa0jEbcxRxJrTbZP9WO"}, {"name": "230-Ya Estoy Resuelto .pptx", "id": "1y5OqCYR-3m2AX4rFxj_dM6B50N6bRd_W"}, {"name": "231-Puedo Entonces Conocerle .pptx", "id": "1NGhl0abh29yOf3IErb46tjEQ9JZP13rx"}, {"name": "232-Sublime Gracia .pptx", "id": "1b26g7yuljhh7IIks_QsF-0Rlvjmq1rjs"}, {"name": "233-Que Hermoso El Cielo Ha De Ser .pptx", "id": "1PE0ZLnYF6em1pgZerrJj-Yk_TlgjEfxG"}, {"name": "233-Que Hermoso El Cielo Ha De Ser (E Major).pptx", "id": "1QJzjg1tIQAx1NyJJCvzCGmrU1rAsOMIW"}, {"name": "234-Hay Un Huerto .pptx", "id": "19D1WhNclKbP0Q-hAptd7-HvzJCXQm2f1"}, {"name": "235-A Solas al Huerto Yo Voy .pptx", "id": "16giTgqpEAHl7ZdY7V63tjtvi7aH5td5h"}, {"name": "236-Agria Voz .pptx", "id": "1UaKEW36TH8Kao0k2UOcmEymda2YCRpnF"}, {"name": "237-Proclamad El Mensaje .pptx", "id": "1jhUsbyTGhSUXRegGsKrAB3jUPZDHGkp2"}, {"name": "237-Proclamad El Mensaje (Db major).pptx", "id": "1FT92ugLWdvlMfOYGaJy_Opt9rMEw5Sbo"}, {"name": "238-Hermoso Mi Redentor .pptx", "id": "12M9sOxJd6uHltHMaZYDK5baGtYJAfSxD"}, {"name": "239-Si Fuí Motivo De Dolor, Señor .pptx", "id": "1xldDI14PovLzyKxzQ5oBKacGFg5-Ght3"}, {"name": "240-Hermosa Vida .pptx", "id": "1enQrbvHOZv1OsZAjC98fLDcIXIbHhv9j"}, {"name": "241-Fuente de Salud .pptx", "id": "1k7QHIyDcCxxswIxiJsXnDlreJe6B9McW"}, {"name": "242-Aviva Tu Obra, ¡Oh Dios!.pptx", "id": "1o6dUiWiRuGK24x2W-ngtefyISHqtbEy2"}, {"name": "243-Jesús, Yo Te Amo", "id": "1sCP-am9cuesmbE81Y87_FB7TLP5CqGM0"}, {"name": "244-Mi Vida Di Por Ti .pptx", "id": "164sxjsqsarQSAFkclisAkgx4LgnsMbsF"}, {"name": "244-Mi Vida Di Por Ti (B Major).pptx", "id": "1eiYhBZsOtCw2EI6rcQjniznv5jiOlREv"}, {"name": "245-Digno Es El Cordero .pptx", "id": "1-5lNDy9E6034Ag5bM_iHXSoO2UIoTjCc"}, {"name": "246-Tendrás Que Renacer .pptx", "id": "1RXOnzYtRYwGOqQWSiiThV5QfT54Myy_x"}, {"name": "247-Esperanza En Mañana .pptx", "id": "1IogNDgnTXXHrkP2WUhxjla2rTqICjfdM"}, {"name": "248-Bendito Señor .pptx", "id": "12VXf2VVlfggyNOkvkH3aP9tiNu_6ilMc"}, {"name": "249-A La Tierra De Canaán .pptx", "id": "1gaESD3pIiJ8sUIFcB_DUP1iSfw6iiPke"}];
+
+function isMobile() {
+  return /Android|iPad|iPhone|iPod|tablet/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+}
+
+function buildUrl(item) {
+  if (!item.id) return '#';
+  return 'https://docs.google.com/presentation/d/' + item.id + '/present';
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return text;
+  return text.slice(0,i) + '<mark>' + text.slice(i, i+q.length) + '</mark>' + text.slice(i+q.length);
+}
+
+function openPresentation(url) {
+  if (isMobile()) {
+    window.location.href = url;
+  } else {
+    const w = 1200, h = 720;
+    const left = Math.round((screen.width - w) / 2);
+    const top = Math.round((screen.height - h) / 2);
+    const popup = window.open(url, 'himno_popup',
+      'width='+w+',height='+h+',left='+left+',top='+top+',toolbar=no,menubar=no,scrollbars=no,resizable=yes');
+    if (popup) popup.focus();
+    else window.open(url, '_blank');
+  }
+}
+
+function render(query) {
+  const q = query.trim().toLowerCase();
+  const filtered = q ? DATA.filter(p => p.name.toLowerCase().includes(q)) : DATA;
+  document.getElementById('stats').textContent = q
+    ? filtered.length + ' resultado' + (filtered.length !== 1 ? 's' : '') + ' de ' + DATA.length
+    : DATA.length + ' himnos disponibles';
+  if (filtered.length === 0) {
+    document.getElementById('results').innerHTML = '<div class="empty-state">Sin resultados para "' + query + '"</div>';
+    return;
+  }
+  document.getElementById('results').innerHTML = filtered.map(p => {
+    const url = buildUrl(p);
+    return '<a class="result-item" href="' + url + '" onclick="handleClick(event,this)">' +
+      '<div class="slide-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7f77dd" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>' +
+      '<span class="result-name">' + highlight(p.name, query) + '</span>' +
+      '<svg class="open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>' +
+      '</a>';
+  }).join('');
+}
+
+function handleClick(e, el) {
+  e.preventDefault();
+  openPresentation(el.href);
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
+document.getElementById('count-tag').textContent = DATA.length + ' himnos';
+
+const searchInput = document.getElementById('search-input');
+const clearBtn = document.getElementById('clear-btn');
+searchInput.addEventListener('input', e => {
+  clearBtn.style.display = e.target.value ? 'block' : 'none';
+  render(e.target.value);
+});
+clearBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  render('');
+  searchInput.focus();
+});
+
+render('');
+if (!isMobile()) searchInput.focus();
+</script>
+</body>
+</html>
