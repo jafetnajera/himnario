@@ -276,6 +276,13 @@ body{
   min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #9b3b2f;
   background:transparent;color:#9b3b2f;font:inherit;font-size:14px;cursor:pointer;
 }
+.botones{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn-sec2{
+  min-height:46px;padding:0 18px;border-radius:999px;border:1px solid var(--bosque);
+  background:transparent;color:var(--bosque);font:inherit;font-size:15px;cursor:pointer;
+}
+.panel-nota ol{margin:8px 0 0 20px}
+.panel-nota li{margin:3px 0}
 @media (max-width:480px){ .contador{display:none} }
 </style>
 </head>
@@ -328,7 +335,15 @@ body{
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
-    <p class="panel-nota">Elige todos los PDF de la carpeta <b>pdf/NEGRO</b> para el himnario negro y los de <b>pdf/CHICO</b> para el chico. Si un himno ya existe, se reemplaza.</p>
+    <div class="panel-nota">
+      <b>Para agregar muchos a la vez:</b>
+      <ol>
+        <li>Abre la app <b>Archivos</b> de la tablet y entra a <b>pdf/NEGRO</b> (o <b>pdf/CHICO</b>).</li>
+        <li>Selecciona todos los PDF y toca <b>Compartir</b>.</li>
+        <li>Elige <b>Himnario</b> y despu&#233;s el himnario al que van.</li>
+      </ol>
+      <p style="margin-top:8px">Si un himno ya existe, se reemplaza. Con &#8220;Agregar PDF&#8221; puedes subir uno por uno.</p>
+    </div>
     <div class="panel-fila">
       <div><b>Negro</b><span id="cuenta-NEGRO">&#8212;</span></div>
       <label class="btn-prim">Agregar PDF<input type="file" accept="application/pdf,.pdf" multiple data-carpeta="NEGRO" hidden/></label>
@@ -344,6 +359,22 @@ body{
     <div class="panel-pie">
       <span id="espacio"></span>
       <button class="btn-borrar" type="button" id="borrar-todo">Borrar todos</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel-fondo" id="recibidos" hidden>
+  <div class="panel vidrio" role="dialog" aria-modal="true" aria-labelledby="recibidos-titulo">
+    <div class="panel-cabeza"><h2 id="recibidos-titulo">PDF recibidos</h2></div>
+    <p class="panel-nota" id="recibidos-texto"></p>
+    <div class="botones" id="recibidos-botones">
+      <button class="btn-prim" type="button" data-destino="NEGRO">Himnario Negro</button>
+      <button class="btn-prim" type="button" data-destino="CHICO">Himnario Chico</button>
+      <button class="btn-sec2" type="button" id="recibidos-cancelar">Cancelar</button>
+    </div>
+    <div class="progreso" id="recibidos-progreso" hidden>
+      <div class="barra"><span id="recibidos-barra"></span></div>
+      <p id="recibidos-estado"></p>
     </div>
   </div>
 </div>
@@ -385,18 +416,27 @@ function normalizar(d) {
 var dbPromesa = null;
 function db() {
   if (!dbPromesa) dbPromesa = new Promise(function (ok, mal) {
-    var r = indexedDB.open("himnario", 1);
-    r.onupgradeneeded = function () { r.result.createObjectStore("pdfs"); };
-    r.onsuccess = function () { ok(r.result); };
+    var r = indexedDB.open("himnario", 2);
+    r.onupgradeneeded = function () {
+      var d = r.result;
+      if (!d.objectStoreNames.contains("pdfs")) d.createObjectStore("pdfs");
+      if (!d.objectStoreNames.contains("pendientes")) d.createObjectStore("pendientes");
+    };
+    r.onsuccess = function () {
+      var d = r.result;
+      d.onversionchange = function () { d.close(); dbPromesa = null; };
+      ok(d);
+    };
     r.onerror = function () { mal(r.error); };
   });
   return dbPromesa;
 }
-function operacion(modo, fn) {
+function operacion(modo, fn, almacen) {
+  almacen = almacen || "pdfs";
   return db().then(function (d) {
     return new Promise(function (ok, mal) {
-      var tx = d.transaction("pdfs", modo);
-      var req = fn(tx.objectStore("pdfs"));
+      var tx = d.transaction(almacen, modo);
+      var req = fn(tx.objectStore(almacen));
       tx.oncomplete = function () { ok(req ? req.result : undefined); };
       tx.onerror = tx.onabort = function () { mal(tx.error); };
     });
@@ -456,7 +496,7 @@ function render(q) {
   });
 
   visibles = fCon.concat(fSin);
-  $("contador").textContent = q ? visibles.length + " de " + datos.length : datos.length + " himnos";
+  $("contador").textContent = q ? visibles.length + " de " + datos.length : datos.length + (datos.length === 1 ? " himno" : " himnos");
 
   var grid = $("cuadricula");
   grid.innerHTML = "";
@@ -701,9 +741,74 @@ $("borrar-todo").addEventListener("click", function () {
   });
 });
 
+// ---------- PDF COMPARTIDOS DESDE "ARCHIVOS" ----------
+function contarPendientes() { return operacion("readonly", function (s) { return s.count(); }, "pendientes"); }
+
+function moverPendientes(carpeta) {
+  return db().then(function (d) {
+    return new Promise(function (ok, mal) {
+      var tx = d.transaction(["pendientes", "pdfs"], "readwrite");
+      var pend = tx.objectStore("pendientes"), pdfs = tx.objectStore("pdfs");
+      var n = 0;
+      pend.openCursor().onsuccess = function (e) {
+        var c = e.target.result;
+        if (!c) return;
+        pdfs.put(c.value, carpeta + "/" + c.key);
+        c.delete();
+        n++;
+        c.continue();
+      };
+      tx.oncomplete = function () { ok(n); };
+      tx.onerror = tx.onabort = function () { mal(tx.error); };
+    });
+  });
+}
+function borrarPendientes() { return operacion("readwrite", function (s) { return s.clear(); }, "pendientes"); }
+
+function cerrarRecibidos() {
+  $("recibidos").hidden = true;
+  history.replaceState(null, "", location.pathname);
+}
+
+function revisarRecibidos() {
+  var q = new URLSearchParams(location.search).get("compartido");
+  if (q === "error") { toast("No se pudieron recibir los PDF. Prueba con menos archivos a la vez."); history.replaceState(null, "", location.pathname); }
+  contarPendientes().then(function (n) {
+    if (!n) { if (q !== null && q !== "error") history.replaceState(null, "", location.pathname); return; }
+    $("recibidos-texto").textContent = "Recib\u00ed " + n + (n === 1 ? " PDF" : " PDF") + ". \u00bfA qu\u00e9 himnario los agrego?";
+    $("recibidos-botones").style.display = "";
+    $("recibidos-progreso").hidden = true;
+    $("recibidos").hidden = false;
+  });
+}
+
+document.querySelectorAll("#recibidos [data-destino]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var destino = b.getAttribute("data-destino");
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+    $("recibidos-botones").style.display = "none";
+    $("recibidos-progreso").hidden = false;
+    $("recibidos-barra").style.width = "50%";
+    $("recibidos-estado").textContent = "Guardando\u2026";
+    moverPendientes(destino).then(function (n) {
+      $("recibidos-barra").style.width = "100%";
+      toast("Listo: " + n + " himnos guardados en " + (destino === "NEGRO" ? "Negro" : "Chico"));
+      cerrarRecibidos();
+      if (destino === CARPETA) cargar(); else elegirCarpeta(destino);
+    }).catch(function () {
+      $("recibidos-estado").textContent = "No se pudieron guardar. \u00bfEspacio lleno?";
+      $("recibidos-botones").style.display = "";
+    });
+  });
+});
+$("recibidos-cancelar").addEventListener("click", function () {
+  borrarPendientes().then(cerrarRecibidos);
+});
+
 // ---------- ARRANQUE ----------
 if (MODO === "local") {
   $("btn-gestion").hidden = false;
+  revisarRecibidos();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
 }
 cargar();
