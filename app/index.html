@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#FAF9F4"/>
+<title>Himnario</title>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" href="icon-192.png"/>
+<style>
+:root{
+  --bosque:#0F5132;
+  --bosque-oscuro:#0B3D27;
+  --menta:#B7D9C1;
+  --marfil:#FAF9F4;
+  --piedra:#D6D3C8;
+  --tinta:#1E3A2B;
+  --cristal:rgba(255,255,255,0.55);
+  --cristal-borde:rgba(255,255,255,0.7);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;overflow:hidden;
+  font-family:Georgia,"Times New Roman",serif;
+  color:var(--tinta);
+  background:linear-gradient(165deg,var(--marfil) 0%,#ECEAE2 55%,var(--piedra) 100%);
+  background-attachment:fixed;
+}
+.vidrio{
+  background:var(--cristal);
+  backdrop-filter:blur(12px) saturate(120%);
+  -webkit-backdrop-filter:blur(12px) saturate(120%);
+  border:1px solid var(--cristal-borde);
+  box-shadow:0 8px 28px rgba(15,81,50,.08);
+}
+
+/* BARRA SUPERIOR */
+.topbar{
+  flex-shrink:0;z-index:5;
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;
+  border-radius:0;border-left:0;border-right:0;border-top:0;
+}
+.marca{
+  width:36px;height:36px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--bosque);font-size:17px;
+  background:rgba(255,255,255,.6);border:1px solid var(--cristal-borde);
+}
+.titulo{
+  flex:1;min-width:0;
+  font-size:13px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--bosque);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.titulo span{color:var(--tinta);font-weight:normal;opacity:.7}
+.contador{font-size:13px;opacity:.65;white-space:nowrap}
+
+/* SELECTOR NEGRO / CHICO */
+.selector{
+  display:flex;flex-shrink:0;padding:3px;gap:3px;
+  border-radius:999px;background:rgba(255,255,255,.5);
+  border:1px solid var(--cristal-borde);
+}
+.selector button{
+  min-height:38px;padding:0 16px;border-radius:999px;
+  border:0;background:transparent;color:var(--bosque);
+  font:inherit;font-size:15px;cursor:pointer;
+}
+.selector button.activo{background:var(--bosque);color:var(--marfil)}
+
+/* DOS COLUMNAS CON DESLIZADOR PROPIO */
+.principal{
+  flex:1;min-height:0;
+  display:flex;gap:12px;
+  padding:12px 14px 14px;
+}
+.zona-numeros{
+  flex:1;min-width:0;min-height:0;
+  display:flex;flex-direction:column;
+}
+.zona-lateral{
+  width:clamp(118px,34vw,250px);flex-shrink:0;
+  min-height:0;display:flex;flex-direction:column;
+  border-radius:20px;padding:12px 8px 8px;
+}
+
+/* BUSCADOR */
+.buscar{flex-shrink:0}
+.buscar input{
+  width:100%;height:50px;padding:0 16px;
+  border-radius:16px;border:1px solid var(--cristal-borde);
+  background:rgba(255,255,255,.7);
+  font:inherit;font-size:17px;color:var(--tinta);outline:none;
+  box-shadow:0 4px 16px rgba(15,81,50,.06);
+}
+.buscar input:focus{border-color:var(--bosque);box-shadow:0 0 0 3px rgba(15,81,50,.12)}
+
+/* ESTADO */
+.estado-linea{
+  flex-shrink:0;
+  display:flex;align-items:center;gap:8px;
+  margin:8px 4px 10px;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;
+}
+.punto{width:8px;height:8px;border-radius:50%;background:var(--piedra)}
+.punto.ok{background:var(--bosque)}
+.punto.aviso{background:#9A8A5C}
+
+/* CUADRICULA */
+.cuadricula-scroll{
+  flex:1;min-height:0;overflow-y:auto;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:2px 4px 16px;
+}
+.cuadricula{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(64px,1fr));
+  gap:10px;
+}
+.celda{
+  position:relative;
+  min-height:56px;
+  border-radius:16px;
+  border:1px solid var(--cristal-borde);
+  background:var(--cristal);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 4px 14px rgba(15,81,50,.08);
+  font:inherit;font-size:20px;font-weight:bold;color:var(--tinta);
+  font-variant-numeric:lining-nums tabular-nums;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.celda::before{
+  content:"";position:absolute;top:0;left:50%;
+  width:28px;height:2px;margin-left:-14px;
+  border-radius:0 0 2px 2px;
+  background:var(--bosque);opacity:.4;
+}
+@media (hover:hover){
+  .celda:hover{
+    transform:translateY(1px) scale(.98);
+    background:rgba(255,255,255,.35);
+    box-shadow:inset 0 3px 8px rgba(15,81,50,.22), inset 0 -1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(15,81,50,.08);
+  }
+}
+.celda:focus-visible{
+  outline:none;
+  box-shadow:inset 0 3px 8px rgba(15,81,50,.22), inset 0 -1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(15,81,50,.08);
+}
+.celda:active,.celda.activa{
+  background:var(--menta);
+  transform:translateY(1px) scale(.97);
+  box-shadow:inset 0 3px 8px rgba(15,81,50,.26), inset 0 -1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(15,81,50,.08);
+}
+
+/* LISTA LATERAL */
+.zona-lateral h2{
+  flex-shrink:0;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bosque);font-weight:bold;
+  padding:4px 8px 8px;
+}
+.lista-scroll{
+  flex:1;min-height:0;overflow-y:auto;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+}
+.fila{
+  display:block;width:100%;text-align:left;
+  min-height:48px;padding:10px 8px;
+  border:0;border-radius:12px;background:transparent;
+  font:inherit;font-size:15px;color:var(--tinta);
+  line-height:1.3;cursor:pointer;
+}
+@media (hover:hover){
+  .fila:hover{
+    background:rgba(255,255,255,.35);
+    box-shadow:inset 0 2px 6px rgba(15,81,50,.18);
+  }
+}
+.fila:focus-visible{
+  outline:none;
+  box-shadow:inset 0 2px 6px rgba(15,81,50,.18);
+}
+.fila:active,.fila.activa{background:var(--menta)}
+
+.vacio{display:none;text-align:center;padding:40px 0;font-size:16px;opacity:.6}
+.vacio.visible{display:block}
+
+.toast{
+  position:fixed;left:50%;bottom:20px;
+  transform:translateX(-50%) translateY(20px);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+  padding:12px 20px;border-radius:14px;
+  background:var(--bosque-oscuro);color:var(--marfil);
+  font-size:15px;max-width:90vw;text-align:center;
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:480px){
+  .titulo{font-size:11px;letter-spacing:.16em}
+  .selector button{padding:0 11px;font-size:14px}
+  .principal{gap:8px;padding:10px 10px 10px}
+  .cuadricula{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}
+  .celda{min-height:52px;font-size:18px}
+  .zona-lateral{width:clamp(108px,36vw,160px)}
+}
+
+/* VISOR DE HIMNOS (PDF.js) */
+#visor{
+  position:fixed;inset:0;background:#000;display:none;
+  align-items:center;justify-content:center;z-index:20;cursor:none;
+}
+#visor.abierto{display:flex}
+#visor canvas{max-width:100%;max-height:100%;display:block}
+
+/* BOTON DE GESTION (tablet) */
+.btn-icono{
+  width:44px;height:44px;flex-shrink:0;border-radius:999px;
+  border:1px solid var(--cristal-borde);background:rgba(255,255,255,.5);
+  color:var(--bosque);display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.btn-icono:hover{background:var(--menta)}
+.btn-icono svg{width:20px;height:20px}
+.btn-icono[hidden]{display:none}
+
+/* SIN HIMNOS TODAVIA */
+.sin-himnos{
+  display:none;max-width:460px;margin:24px auto;padding:22px;border-radius:20px;text-align:center;
+}
+.sin-himnos.visible{display:block}
+.sin-himnos h2{font-size:18px;color:var(--bosque);margin-bottom:8px}
+.sin-himnos p{font-size:15px;line-height:1.45;opacity:.8;margin-bottom:16px}
+.btn-prim{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:46px;padding:0 20px;border-radius:999px;border:0;
+  background:var(--bosque);color:var(--marfil);font:inherit;font-size:15px;cursor:pointer;
+}
+.btn-prim:hover{background:var(--bosque-oscuro)}
+.btn-prim.deshabilitado{opacity:.45;pointer-events:none}
+
+/* PANEL: HIMNOS EN ESTE DISPOSITIVO */
+.panel-fondo{
+  position:fixed;inset:0;z-index:15;background:rgba(30,58,43,.28);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+}
+.panel-fondo[hidden]{display:none}
+.panel{
+  width:min(520px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;
+  border-radius:22px;padding:20px;background:rgba(250,249,244,.94);
+}
+.panel-cabeza{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.panel-cabeza h2{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--bosque)}
+.panel-nota{font-size:14px;line-height:1.45;opacity:.8;margin-bottom:14px}
+.panel-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 0;border-top:1px solid var(--piedra);
+}
+.panel-fila b{display:block;font-size:16px}
+.panel-fila span{font-size:13px;opacity:.65}
+.progreso{margin-top:12px}
+.progreso[hidden]{display:none}
+.barra{height:8px;border-radius:99px;background:var(--piedra);overflow:hidden}
+.barra span{display:block;height:100%;width:0;background:var(--bosque);transition:width .15s}
+.progreso p{font-size:13px;margin-top:6px;opacity:.75}
+.panel-pie{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--piedra);
+}
+.panel-pie span{font-size:13px;opacity:.65}
+.btn-borrar{
+  min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #9b3b2f;
+  background:transparent;color:#9b3b2f;font:inherit;font-size:14px;cursor:pointer;
+}
+@media (max-width:480px){ .contador{display:none} }
+</style>
+</head>
+<body>
+
+<header class="topbar vidrio">
+  <div class="marca" aria-hidden="true">&#9835;</div>
+  <div class="titulo">Himnario <span id="nombre-carpeta">Negro</span></div>
+  <div class="contador" id="contador"></div>
+  <div class="selector" role="group" aria-label="Himnario">
+    <button type="button" data-carpeta="NEGRO" class="activo">Negro</button>
+    <button type="button" data-carpeta="CHICO">Chico</button>
+  </div>
+  <button class="btn-icono" type="button" id="btn-gestion" aria-label="Himnos en este dispositivo" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5 12 16l2.5-2.5"/></svg>
+  </button>
+</header>
+
+<main class="principal">
+  <section class="zona-numeros">
+    <div class="buscar">
+      <input id="buscar" type="search" placeholder="N&#250;mero o nombre" autocomplete="off" inputmode="search"/>
+    </div>
+    <div class="estado-linea">
+      <span class="punto" id="estado-punto"></span>
+      <span id="estado"></span>
+    </div>
+    <div class="cuadricula-scroll">
+      <div class="cuadricula" id="cuadricula"></div>
+      <div class="vacio" id="vacio">Sin resultados</div>
+      <div class="sin-himnos vidrio" id="sin-himnos">
+        <h2>A&#250;n no hay himnos aqu&#237;</h2>
+        <p>Copia la carpeta <b>pdf</b> de la laptop a esta tablet y agr&#233;galos una sola vez. Despu&#233;s funcionan sin internet.</p>
+        <button class="btn-prim" type="button" id="btn-empezar">Agregar himnos</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="zona-lateral vidrio" id="zona-lateral">
+    <h2>Otros himnos</h2>
+    <div class="lista-scroll" id="lista"></div>
+  </aside>
+</main>
+
+<div class="panel-fondo" id="panel" hidden>
+  <div class="panel vidrio" role="dialog" aria-modal="true" aria-labelledby="panel-titulo">
+    <div class="panel-cabeza">
+      <h2 id="panel-titulo">Himnos en este dispositivo</h2>
+      <button class="btn-icono" type="button" id="panel-cerrar" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <p class="panel-nota">Elige todos los PDF de la carpeta <b>pdf/NEGRO</b> para el himnario negro y los de <b>pdf/CHICO</b> para el chico. Si un himno ya existe, se reemplaza.</p>
+    <div class="panel-fila">
+      <div><b>Negro</b><span id="cuenta-NEGRO">&#8212;</span></div>
+      <label class="btn-prim">Agregar PDF<input type="file" accept="application/pdf,.pdf" multiple data-carpeta="NEGRO" hidden/></label>
+    </div>
+    <div class="panel-fila">
+      <div><b>Chico</b><span id="cuenta-CHICO">&#8212;</span></div>
+      <label class="btn-prim">Agregar PDF<input type="file" accept="application/pdf,.pdf" multiple data-carpeta="CHICO" hidden/></label>
+    </div>
+    <div class="progreso" id="progreso" hidden>
+      <div class="barra"><span id="barra"></span></div>
+      <p id="progreso-texto"></p>
+    </div>
+    <div class="panel-pie">
+      <span id="espacio"></span>
+      <button class="btn-borrar" type="button" id="borrar-todo">Borrar todos</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<div id="visor"><canvas id="lienzo"></canvas></div>
+
+<script src="lib/pdf.min.js"></script>
+<script>
+// Modo servidor: la laptop con servidor-pdf.ps1 (localhost:7734)
+// Modo local: tablet u otro equipo, con los PDF guardados dentro de la app
+var MODO = ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && location.port === "7734") ? "servidor" : "local";
+var CARPETA = "NEGRO";
+var datos = [], visibles = [], activo = null, tt = null;
+
+function $(id) { return document.getElementById(id); }
+
+function setEstado(tipo, texto) {
+  $("estado").textContent = texto;
+  $("estado-punto").className = "punto " + tipo;
+}
+
+function toast(msg) {
+  var t = $("toast");
+  t.textContent = msg;
+  t.classList.add("visible");
+  clearTimeout(tt);
+  tt = setTimeout(function () { t.classList.remove("visible"); }, 2800);
+}
+
+function normalizar(d) {
+  d = [].concat.apply([], d || []);
+  return d.map(function (x) {
+    return typeof x === "string" ? { name: x } : { name: x.name || x.nombre || "" };
+  }).filter(function (h) { return h.name; });
+}
+
+// ---------- ALMACEN LOCAL (IndexedDB) ----------
+var dbPromesa = null;
+function db() {
+  if (!dbPromesa) dbPromesa = new Promise(function (ok, mal) {
+    var r = indexedDB.open("himnario", 1);
+    r.onupgradeneeded = function () { r.result.createObjectStore("pdfs"); };
+    r.onsuccess = function () { ok(r.result); };
+    r.onerror = function () { mal(r.error); };
+  });
+  return dbPromesa;
+}
+function operacion(modo, fn) {
+  return db().then(function (d) {
+    return new Promise(function (ok, mal) {
+      var tx = d.transaction("pdfs", modo);
+      var req = fn(tx.objectStore("pdfs"));
+      tx.oncomplete = function () { ok(req ? req.result : undefined); };
+      tx.onerror = tx.onabort = function () { mal(tx.error); };
+    });
+  });
+}
+function nombresLocales(c) {
+  return operacion("readonly", function (s) {
+    return s.getAllKeys(IDBKeyRange.bound(c + "/", c + "/￿"));
+  }).then(function (keys) {
+    return keys.map(function (k) { return k.slice(c.length + 1); });
+  });
+}
+function guardarPdf(c, nombre, blob) { return operacion("readwrite", function (s) { return s.put(blob, c + "/" + nombre); }); }
+function leerPdf(c, nombre) { return operacion("readonly", function (s) { return s.get(c + "/" + nombre); }); }
+function borrarTodo() { return operacion("readwrite", function (s) { return s.clear(); }); }
+
+// ---------- LISTA ----------
+function crearCelda(h) {
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "celda";
+  b.textContent = h.num;
+  b.title = h.name;
+  b.onclick = function () { abrir(h, b); };
+  return b;
+}
+
+function crearFila(h) {
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "fila";
+  b.textContent = h.name;
+  b.onclick = function () { abrir(h, b); };
+  return b;
+}
+
+function render(q) {
+  q = (q || "").trim().toLowerCase();
+  var esNum = /^\d+$/.test(q);
+  var con = [], sin = [];
+
+  datos.forEach(function (h) {
+    var m = h.name.match(/^(\d+)/);
+    if (m) { h.num = parseInt(m[1], 10); con.push(h); }
+    else { sin.push(h); }
+  });
+  con.sort(function (a, b) { return a.num - b.num || a.name.localeCompare(b.name); });
+  sin.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+  var fCon = con.filter(function (h) {
+    if (!q) return true;
+    if (esNum) return String(h.num).indexOf(q) === 0;
+    return h.name.toLowerCase().indexOf(q) !== -1;
+  });
+  var fSin = sin.filter(function (h) {
+    return !esNum && (!q || h.name.toLowerCase().indexOf(q) !== -1);
+  });
+
+  visibles = fCon.concat(fSin);
+  $("contador").textContent = q ? visibles.length + " de " + datos.length : datos.length + " himnos";
+
+  var grid = $("cuadricula");
+  grid.innerHTML = "";
+  fCon.forEach(function (h) { grid.appendChild(crearCelda(h)); });
+
+  var lista = $("lista");
+  lista.innerHTML = "";
+  fSin.forEach(function (h) { lista.appendChild(crearFila(h)); });
+  $("zona-lateral").style.display = sin.length ? "" : "none";
+
+  var vacioTotal = datos.length === 0 && MODO === "local";
+  $("sin-himnos").classList.toggle("visible", vacioTotal);
+  $("vacio").classList.toggle("visible", !vacioTotal && visibles.length === 0);
+}
+
+function cargar() {
+  setEstado("aviso", "Cargando…");
+  var p = MODO === "servidor"
+    ? fetch("/himnos?carpeta=" + encodeURIComponent(CARPETA)).then(function (r) { return r.json(); }).then(normalizar)
+    : nombresLocales(CARPETA).then(function (ns) { return ns.map(function (n) { return { name: n }; }); });
+  p.then(function (d) {
+    datos = d;
+    if (MODO === "servidor") setEstado("ok", "Actualizada");
+    else setEstado(d.length ? "ok" : "aviso", d.length ? "Guardados en este dispositivo" : "Sin himnos en este dispositivo");
+    render($("buscar").value);
+  }).catch(function () {
+    setEstado("aviso", MODO === "servidor" ? "Sin conexión con el servidor" : "No pude leer los himnos guardados");
+    datos = [];
+    render("");
+  });
+}
+
+// Cambiar entre Negro y Chico
+function elegirCarpeta(c) {
+  if (c === CARPETA) return;
+  CARPETA = c;
+  $("nombre-carpeta").textContent = c === "NEGRO" ? "Negro" : "Chico";
+  document.querySelectorAll(".selector button").forEach(function (b) {
+    b.classList.toggle("activo", b.getAttribute("data-carpeta") === c);
+  });
+  $("buscar").value = "";
+  cargar();
+}
+document.querySelectorAll(".selector button").forEach(function (b) {
+  b.addEventListener("click", function () { elegirCarpeta(b.getAttribute("data-carpeta")); });
+});
+
+// ---------- VISOR (PDF.js dentro de la pagina) ----------
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "lib/pdf.worker.min.js";
+var doc = null, paginaActual = 1, cache = {};
+
+function abrir(h, el) {
+  if (el) {
+    if (activo) activo.classList.remove("activa");
+    el.classList.add("activa");
+    activo = el;
+    setTimeout(function () { el.classList.remove("activa"); }, 1500);
+  }
+  if (!window.pdfjsLib) { toast("Falta la carpeta lib (PDF.js)"); return; }
+  var v = $("visor");
+  var l = $("lienzo");
+  l.getContext("2d").clearRect(0, 0, l.width, l.height);
+  v.classList.add("abierto");
+  if (v.requestFullscreen) v.requestFullscreen().catch(function () {});
+
+  doc = null; cache = {}; paginaActual = 1;
+  var carpeta = CARPETA;
+  var fuente = MODO === "servidor"
+    ? Promise.resolve({ url: "/pdf/" + carpeta + "/" + encodeURIComponent(h.name) + ".pdf" })
+    : leerPdf(carpeta, h.name).then(function (b) {
+        if (!b) throw new Error("no existe");
+        return b.arrayBuffer();
+      }).then(function (buf) { return { data: buf }; });
+
+  fuente
+    .then(function (src) { return pdfjsLib.getDocument(src).promise; })
+    .then(function (d) { doc = d; mostrar(1); })
+    .catch(function () { cerrarVisor(); toast("No encontré el himno: " + h.name); });
+}
+
+function renderizar(n) {
+  if (cache[n]) return cache[n];
+  cache[n] = doc.getPage(n).then(function (p) {
+    var base = p.getViewport({ scale: 1 });
+    var dpr = window.devicePixelRatio || 1;
+    var escala = Math.min(window.innerWidth / base.width, window.innerHeight / base.height) * dpr;
+    var vp = p.getViewport({ scale: escala });
+    var c = document.createElement("canvas");
+    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    return p.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise.then(function () { return c; });
+  });
+  return cache[n];
+}
+
+function mostrar(n) {
+  if (!doc || n < 1 || n > doc.numPages) return;
+  paginaActual = n;
+  renderizar(n).then(function (c) {
+    if (paginaActual !== n || !doc) return;
+    var l = $("lienzo");
+    var dpr = window.devicePixelRatio || 1;
+    l.width = c.width; l.height = c.height;
+    l.style.width = (c.width / dpr) + "px"; l.style.height = (c.height / dpr) + "px";
+    l.getContext("2d").drawImage(c, 0, 0);
+    if (n < doc.numPages) renderizar(n + 1);   // deja lista la siguiente
+  });
+}
+
+// Avanzar: en la ultima diapositiva, un paso mas cierra el himno (igual que Esc)
+function siguiente() {
+  if (!doc) return;
+  if (paginaActual >= doc.numPages) cerrarVisor();
+  else mostrar(paginaActual + 1);
+}
+function anterior() { if (doc) mostrar(paginaActual - 1); }
+
+function visorAbierto() { return $("visor").classList.contains("abierto"); }
+
+function cerrarVisor() {
+  $("visor").classList.remove("abierto");
+  if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+  doc = null; cache = {};
+  if (window.matchMedia("(any-pointer: fine)").matches) {
+    setTimeout(function () { $("buscar").focus(); }, 80);
+  }
+}
+
+document.addEventListener("fullscreenchange", function () {
+  if (!document.fullscreenElement && visorAbierto()) cerrarVisor();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (!visorAbierto()) return;
+  var k = e.key;
+  if (k === "ArrowRight" || k === "ArrowDown" || k === " " || k === "PageDown" || k === "Enter") {
+    e.preventDefault(); siguiente();
+  } else if (k === "ArrowLeft" || k === "ArrowUp" || k === "PageUp" || k === "Backspace") {
+    e.preventDefault(); anterior();
+  } else if (k === "Escape") {
+    e.preventDefault(); cerrarVisor();
+  } else if (k === "Home") {
+    e.preventDefault(); mostrar(1);
+  }
+});
+
+// Toque a la derecha avanza, a la izquierda regresa
+$("visor").addEventListener("click", function (e) {
+  if (e.clientX > window.innerWidth / 2) siguiente(); else anterior();
+});
+
+// ---------- BUSCADOR ----------
+$("buscar").addEventListener("input", function () { render(this.value); });
+$("buscar").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!this.value.trim() || !visibles.length) return;
+    var h = visibles[0];
+    this.value = "";
+    render("");
+    this.blur();
+    abrir(h, null);
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    if (this.value) { this.value = ""; render(""); }
+  }
+});
+
+// ---------- PANEL: AGREGAR HIMNOS AL DISPOSITIVO ----------
+var importando = false;
+
+function actualizarPanel() {
+  ["NEGRO", "CHICO"].forEach(function (c) {
+    nombresLocales(c).then(function (ns) {
+      $("cuenta-" + c).textContent = ns.length + (ns.length === 1 ? " himno" : " himnos");
+    });
+  });
+  if (navigator.storage && navigator.storage.estimate) {
+    navigator.storage.estimate().then(function (e) {
+      $("espacio").textContent = "Usado: " + (e.usage / 1048576).toFixed(0) + " MB";
+    });
+  }
+}
+function abrirPanel() { $("panel").hidden = false; actualizarPanel(); }
+function cerrarPanel() { if (!importando) $("panel").hidden = true; }
+
+$("btn-gestion").addEventListener("click", abrirPanel);
+$("btn-empezar").addEventListener("click", abrirPanel);
+$("panel-cerrar").addEventListener("click", cerrarPanel);
+$("panel").addEventListener("click", function (e) { if (e.target === this) cerrarPanel(); });
+
+function progreso(hechos, total) {
+  $("progreso").hidden = false;
+  $("barra").style.width = (total ? (hechos / total) * 100 : 0) + "%";
+  $("progreso-texto").textContent = "Guardando " + hechos + " de " + total + "…";
+}
+
+function bloquear(si) {
+  importando = si;
+  document.querySelectorAll(".panel .btn-prim").forEach(function (b) { b.classList.toggle("deshabilitado", si); });
+  $("borrar-todo").disabled = si;
+}
+
+function importar(carpeta, archivos) {
+  var lista = Array.prototype.filter.call(archivos, function (f) { return /\.pdf$/i.test(f.name); });
+  if (!lista.length) { toast("No elegiste archivos PDF"); return; }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+  bloquear(true);
+  var i = 0, errores = 0;
+  progreso(0, lista.length);
+  (function siguienteArchivo() {
+    if (i >= lista.length) {
+      bloquear(false);
+      $("progreso-texto").textContent = errores
+        ? "Listo, pero " + errores + " no se pudieron guardar (¿espacio lleno?)"
+        : "Listo: " + lista.length + " himnos guardados en " + (carpeta === "NEGRO" ? "Negro" : "Chico");
+      actualizarPanel();
+      if (carpeta === CARPETA) cargar(); else elegirCarpeta(carpeta);
+      return;
+    }
+    var f = lista[i];
+    guardarPdf(carpeta, f.name.replace(/\.pdf$/i, ""), f)
+      .catch(function () { errores++; })
+      .then(function () { i++; progreso(i, lista.length); siguienteArchivo(); });
+  })();
+}
+
+document.querySelectorAll('.panel input[type="file"]').forEach(function (inp) {
+  inp.addEventListener("change", function () {
+    importar(inp.getAttribute("data-carpeta"), inp.files);
+    inp.value = "";
+  });
+});
+
+$("borrar-todo").addEventListener("click", function () {
+  if (!confirm("¿Borrar todos los himnos guardados en este dispositivo?")) return;
+  borrarTodo().then(function () {
+    $("progreso").hidden = true;
+    actualizarPanel();
+    cargar();
+    toast("Se borraron los himnos de este dispositivo");
+  });
+});
+
+// ---------- ARRANQUE ----------
+if (MODO === "local") {
+  $("btn-gestion").hidden = false;
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
+}
+cargar();
+if (window.matchMedia("(any-pointer: fine)").matches) $("buscar").focus();
+</script>
+</body>
+</html>
